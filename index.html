@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JS Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Victor+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Victor Mono', monospace;
+      display: flex;
+      flex-direction: column;
+    }
+    #editor {
+      flex-grow: 1;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="editor"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+  <script>
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+    require(['vs/editor/editor.main'], function () {
+      monaco.editor.create(document.getElementById('editor'), {
+        value: `function hello() {\n  console.log("JS Playground!");\n}`,
+        language: 'javascript',
+        theme: 'vs-dark',
+        fontFamily: 'Victor Mono',
+        fontSize: 14,
+      });
+    });
+  </script>
+</body>
+</html>
