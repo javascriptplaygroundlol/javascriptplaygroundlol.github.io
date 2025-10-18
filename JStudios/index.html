@@ -27,6 +27,11 @@
       font-size: 14px;
     }
 
+    header .buttons {
+      display: flex;
+      gap: 8px;
+    }
+
     header button {
       background: #007acc;
       color: #fff;
@@ -69,6 +74,9 @@
       padding: 8px 10px;
       cursor: pointer;
       font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     #fileList li:hover {
@@ -84,7 +92,9 @@
 <body>
   <header>
     <div>🟡 <strong>JavaScript Playground — JStudios</strong></div>
-    <div>
+    <div class="buttons">
+      <button id="openFileBtn">Open File</button>
+      <button id="createFileBtn">Create File</button>
       <button id="openFolderBtn">Open Folder</button>
     </div>
   </header>
@@ -114,6 +124,7 @@
       });
     });
 
+    // 📂 Open Folder
     document.getElementById('openFolderBtn').addEventListener('click', async () => {
       try {
         const dirHandle = await window.showDirectoryPicker();
@@ -123,15 +134,41 @@
         for await (const entry of dirHandle.values()) {
           if (entry.kind === 'file') {
             fileHandles.push(entry);
-            const li = document.createElement('li');
-            li.textContent = entry.name;
-            li.addEventListener('click', () => openFile(entry));
-            document.getElementById('fileList').appendChild(li);
+            addFileToSidebar(entry.name, () => openFile(entry));
           }
         }
       } catch (err) {
         console.error('Folder open cancelled or not supported', err);
       }
+    });
+
+    // 📄 Create File
+    document.getElementById('createFileBtn').addEventListener('click', async () => {
+      const fileName = prompt('Enter new file name (e.g., script.js):');
+      if (!fileName) return;
+
+      const blob = new Blob([''], { type: 'text/plain' });
+      const file = new File([blob], fileName, { type: 'text/plain' });
+
+      // Simulate file handle in memory (doesn't save yet)
+      const fakeHandle = {
+        name: fileName,
+        getFile: async () => file,
+        kind: 'file'
+      };
+
+      fileHandles.push(fakeHandle);
+      addFileToSidebar(fileName, () => openFile(fakeHandle));
+      editor.setValue('');
+    });
+
+    // 📃 Open Single File
+    document.getElementById('openFileBtn').addEventListener('click', async () => {
+      const [fileHandle] = await window.showOpenFilePicker();
+      const file = await fileHandle.getFile();
+      fileHandles.push(fileHandle);
+      addFileToSidebar(file.name, () => openFile(fileHandle));
+      openFile(fileHandle);
     });
 
     async function openFile(fileHandle) {
@@ -142,6 +179,13 @@
       const language = detectLanguage(file.name);
       monaco.editor.setModelLanguage(editor.getModel(), language);
       editor.setValue(content);
+    }
+
+    function addFileToSidebar(name, onClick) {
+      const li = document.createElement('li');
+      li.textContent = name;
+      li.addEventListener('click', onClick);
+      document.getElementById('fileList').appendChild(li);
     }
 
     function detectLanguage(fileName) {
