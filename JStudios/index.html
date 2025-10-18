@@ -284,37 +284,7 @@
       reader.readAsText(file);
     }
 
-    function generateId(length = 6) {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let id = '';
-  for (let i = 0; i < length; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return id;
-}
 
-document.getElementById('publish-btn').onclick = () => {
-  if (!currentFile) {
-    alert('Please open or create an HTML file to publish.');
-    return;
-  }
-
-  // Find the HTML file (or just current file)
-  const htmlFile = files[currentFile];
-  if (!htmlFile || htmlFile.language !== 'html') {
-    alert('Please select an HTML file to publish.');
-    return;
-  }
-
-  const siteId = generateId();
-  const blob = new Blob([htmlFile.content], { type: 'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = siteId + '.html';
-  a.click();
-
-  alert(`✅ Website exported!\n\nNow upload the downloaded file to:\n/published/\n\nShare this link:\n${location.origin}/JStudios/site?id=${siteId}`);
-};
 
 function generateId(length = 6) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -345,8 +315,13 @@ document.getElementById('publish-btn').onclick = () => {
   a.download = `${siteId}.html`;
   a.click();
 
-  alert(`✅ Site exported!\n\nMove this file into:\n/JStudios/published/\n\nThen share:\n${location.origin}/JStudios/published/${siteId}.html`);
+  alert(
+    `✅ Site exported!\n\n1️⃣ Upload the file into:\n/JStudios/published/\n` +
+    `2️⃣ Commit and push the file to GitHub\n\n` +
+    `🌐 Your site will then be available at:\n${location.origin}/JStudios/published/${siteId}.html`
+  );
 };
+
 
 
 

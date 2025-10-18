@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redirecting...</title>
+  <style>
+    body {
+      background: #1e1e1e;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+    }
+    .loading {
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading">Redirecting...</div>
+
+  <script>
+    // Remove leading /JStudios/
+    const path = window.location.pathname
+      .replace(/^\/JStudios\//, '')
+      .replace(/\/$/, '');
+
+    if (path && !path.startsWith('published')) {
+      // Redirect to published HTML file
+      const newUrl = `${window.location.origin}/JStudios/published/${path}.html`;
+      window.location.replace(newUrl);
+    } else {
+      document.body.innerHTML = '<h1>404 - Page Not Found</h1><p>Could not find that page.</p>';
+    }
+  </script>
+</body>
+</html>
