@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JStudios - Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #1e1e1e;
+      color: #eee;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    .loading {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading">Redirecting to site...</div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    if (!id) {
+      document.body.innerHTML = '<h2>❌ No site ID provided</h2>';
+    } else {
+      const url = `${window.location.origin}/JStudios/published/${id}.html`;
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>
