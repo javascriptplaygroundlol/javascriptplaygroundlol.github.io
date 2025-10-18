@@ -1,209 +1,753 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JavaScript Playground — JStudios</title>
-  <link href="https://fonts.googleapis.com/css2?family=Victor+Mono&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/x-icon" href="./js.jpg">
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      height: 100vh;
-      font-family: 'Victor Mono', monospace;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      height: 40px;
-      background: #1e1e1e;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      font-size: 14px;
-    }
-
-    header .buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    header button {
-      background: #007acc;
-      color: #fff;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    #main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    #sidebar {
-      width: 250px;
-      background: #252526;
-      color: #ccc;
-      overflow-y: auto;
-      border-right: 1px solid #333;
-    }
-
-    #sidebar h3 {
-      padding: 10px;
-      font-size: 14px;
-      margin: 0;
-      background: #1e1e1e;
-      border-bottom: 1px solid #333;
-    }
-
-    #fileList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    #fileList li {
-      padding: 8px 10px;
-      cursor: pointer;
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    #fileList li:hover {
-      background: #333;
-    }
-
-    #editor {
-      flex: 1;
-      height: 100%;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JavaScript Playground — JStudios</title>
+<link href="https://fonts.googleapis.com/css2?family=Victor+Mono&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html,body { height:100%; margin:0; font-family: 'Victor Mono', monospace; background:#1e1e1e; color:#ddd; }
+  header { height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; background:#252526; border-bottom:1px solid #333; }
+  .brand { color:#f9d342; font-weight:700; }
+  .controls { display:flex; gap:8px; align-items:center; }
+  button { background:#0e639c; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-family:inherit; }
+  button.ghost { background:transparent; border:1px solid #333; color:#ccc; }
+  #layout { height: calc(100vh - 48px); display:grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar tabs" "sidebar editor"; }
+  #sidebar { grid-area: sidebar; background:#252526; border-right:1px solid #333; padding:12px; overflow:auto; }
+  #sidebar h3 { margin:0 0 10px 0; color:#fff; }
+  .muted { color:#999; font-size:12px; margin-top:8px; }
+  .tree { list-style:none; margin:0; padding-left:10px; font-size:13px; color:#ddd; }
+  .tree li { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tree li.file:hover, .tree li.folder:hover { background:#2b2b2f; cursor:pointer; }
+  .tree li.folder { color:#9cdcfe; font-weight:600; }
+  #tabsBar { grid-area: tabs; display:flex; gap:6px; padding:8px; background:#1f1f1f; border-bottom:1px solid #333; overflow:auto; align-items:center; }
+  .tab { padding:6px 10px; background:#2b2b2f; color:#ddd; border-radius:6px; display:inline-flex; gap:8px; align-items:center; cursor:pointer; }
+  .tab.active { background:#111; color:#fff; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,0.6); }
+  .tab .close { background:transparent; border:none; color:#aaa; cursor:pointer; }
+  #editorWrap { grid-area: editor; display:flex; flex-direction:column; min-height:0; }
+  #editor { flex:1; min-height:0; } /* monaco mounts here */
+  #contextMenu { position:fixed; display:none; z-index:9999; background:#262626; border:1px solid #333; color:#ddd; padding:6px 0; border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,0.6); min-width:160px; }
+  #contextMenu button { display:block; width:100%; background:transparent; color:inherit; text-align:left; padding:8px 12px; border:none; cursor:pointer; }
+  #contextMenu button:hover { background:#333; }
+  /* Settings modal */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:2000; }
+  .modal { width:760px; max-width:95%; background:#161616; border-radius:10px; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,0.7); border:1px solid #333; color:#ddd; }
+  .modal h2 { margin:0 0 12px 0; font-size:18px; color:#fff; }
+  .modal .tabs { display:flex; gap:8px; margin-bottom:12px; }
+  .modal .tabs button { background:transparent; border:1px solid #333; color:#ccc; padding:6px 10px; border-radius:6px; cursor:pointer; }
+  .modal .tabs button.active { background:#0e639c; color:#fff; border-color:#0e639c; }
+  .modal .content { max-height:60vh; overflow:auto; padding-right:6px; }
+  .field { margin:10px 0; display:flex; gap:12px; align-items:center; }
+  .field label { width:190px; color:#ccc; }
+  .field input[type="text"], .field select, .field input[type="number"] { padding:6px 8px; border-radius:6px; border:1px solid #333; background:#0f0f0f; color:#ddd; }
+  .field input[type="checkbox"] { width:18px; height:18px; }
+  .modal .bottom { display:flex; justify-content:space-between; margin-top:12px; align-items:center; }
+  .danger { background:#a33; }
+  .small { font-size:13px; color:#aaa; }
+</style>
 </head>
 <body>
-  <header>
-    <div>🟡 <strong>JavaScript Playground — JStudios</strong></div>
-    <div class="buttons">
-      <button id="openFileBtn">Open File</button>
-      <button id="createFileBtn">Create File</button>
-      <button id="openFolderBtn">Open Folder</button>
-    </div>
-  </header>
 
-  <div id="main">
-    <aside id="sidebar">
-      <h3>Files</h3>
-      <ul id="fileList"></ul>
-    </aside>
-    <div id="editor"></div>
+<header>
+  <div class="brand">JavaScript Playground — JStudios</div>
+  <div class="controls">
+    <button id="openFolderBtn">📂 Open Folder</button>
+    <button id="openFileBtn">📄 Open File</button>
+    <button id="createFileBtn">＋ New File</button>
+    <button id="saveAllBtn">💾 Save</button>
+    <button id="settingsBtn" class="ghost">⚙️ Settings</button>
   </div>
+</header>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
-  <script>
-    let editor;
-    let currentFileHandle = null;
-    let fileHandles = [];
+<div id="layout">
+  <aside id="sidebar"><h3>Explorer</h3><div id="explorerRoot">No folder opened.</div><div class="muted">Right-click files/folders for actions.</div></aside>
+  <div id="tabsBar"></div>
+  <div id="editorWrap"><div id="editor"></div></div>
+</div>
 
-    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
-    require(['vs/editor/editor.main'], function () {
-      editor = monaco.editor.create(document.getElementById('editor'), {
-        value: '// Welcome to JStudios!\n',
-        language: 'javascript',
-        theme: 'vs-dark',
-        fontFamily: 'Victor Mono',
-        fontSize: 14,
+<!-- Context Menu -->
+<div id="contextMenu" role="menu">
+  <button data-action="new-file">New File</button>
+  <button data-action="new-folder">New Folder</button>
+  <button data-action="rename">Rename</button>
+  <button data-action="delete">Delete</button>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+  <div class="modal" role="document" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle">Settings</h2>
+    <div class="tabs">
+      <button data-tab="editor" class="active">Editor</button>
+      <button data-tab="app">App</button>
+      <button data-tab="experimental">Experimental</button>
+    </div>
+    <div class="content">
+      <div data-tab-content="editor">
+        <div class="field">
+          <label>Font Size (px)</label>
+          <input type="number" id="setting-fontSize" min="10" max="36" />
+        </div>
+        <div class="field">
+          <label>Font Family</label>
+          <select id="setting-fontFamily">
+            <option value="Victor Mono">Victor Mono</option>
+            <option value="monospace">monospace</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Fira Code">Fira Code</option>
+            <option value="JetBrains Mono">JetBrains Mono</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Theme</label>
+          <select id="setting-theme">
+            <option value="vs-dark">VS Dark</option>
+            <option value="vs-light">VS Light</option>
+            <option value="monokai">Monokai</option>
+            <option value="dracula">Dracula</option>
+            <option value="solarized-light">Solarized Light</option>
+            <option value="solarized-dark">Solarized Dark</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tab Size</label>
+          <input type="number" id="setting-tabSize" min="1" max="8" />
+        </div>
+        <div class="field">
+          <label>Use Spaces</label>
+          <input type="checkbox" id="setting-useSpaces" />
+        </div>
+        <div class="field">
+          <label>Word Wrap</label>
+          <input type="checkbox" id="setting-wordWrap" />
+        </div>
+        <div class="field">
+          <label>Auto-save Interval (sec)</label>
+          <input type="number" id="setting-autosave" min="0" max="300" />
+        </div>
+      </div>
+
+      <div data-tab-content="app" style="display:none;">
+        <div class="field">
+          <label>Default Start Page</label>
+          <select id="setting-startPage">
+            <option value="explorer">Explorer</option>
+            <option value="blank">Blank Editor</option>
+            <option value="lastFolder">Last Opened Folder</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Remember Last Opened Folder</label>
+          <input type="checkbox" id="setting-rememberFolder" />
+        </div>
+        <div class="field">
+          <label>Reset All Settings</label>
+          <button id="resetSettings" class="danger">Reset</button>
+        </div>
+      </div>
+
+      <div data-tab-content="experimental" style="display:none;">
+        <div class="field">
+          <label>File Tree Animations</label>
+          <input type="checkbox" id="setting-treeAnimation" />
+        </div>
+        <div class="field">
+          <label>Enable Beta Features</label>
+          <input type="checkbox" id="setting-beta" />
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="small">Changes are saved automatically.</div>
+      <div>
+        <button id="closeSettings" class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monaco -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+<script>
+(async function () {
+  // ---------- Defaults & Settings ----------
+  const DEFAULTS = {
+    fontSize: 14,
+    fontFamily: 'Victor Mono',
+    theme: 'vs-dark',
+    tabSize: 2,
+    useSpaces: true,
+    wordWrap: false,
+    autosave: 5,
+    startPage: 'explorer',
+    rememberFolder: true,
+    treeAnimation: true,
+    beta: false
+  };
+
+  function loadSettings() {
+    const s = JSON.parse(localStorage.getItem('jstudios.settings') || '{}');
+    return Object.assign({}, DEFAULTS, s);
+  }
+  function saveSettings(obj) {
+    localStorage.setItem('jstudios.settings', JSON.stringify(obj));
+  }
+  let settings = loadSettings();
+
+  // IndexedDB helper for storing directory handle (structured clone)
+  function idbPut(key, value) {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open('jstudios-handles', 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore('handles');
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(value, key);
+        tx.oncomplete = () => { db.close(); res(); };
+        tx.onerror = (e) => { db.close(); rej(e); };
+      };
+      req.onerror = (e) => rej(e);
+    });
+  }
+  function idbGet(key) {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open('jstudios-handles', 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore('handles'); };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('handles', 'readonly');
+        const r = tx.objectStore('handles').get(key);
+        r.onsuccess = () => { db.close(); res(r.result); };
+        r.onerror = (e) => { db.close(); rej(e); };
+      };
+      req.onerror = (e) => rej(e);
+    });
+  }
+  function idbDelete(key) {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open('jstudios-handles', 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore('handles'); };
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('handles', 'readwrite');
+        const r = tx.objectStore('handles').delete(key);
+        tx.oncomplete = () => { db.close(); res(); };
+        tx.onerror = (e) => { db.close(); rej(e); };
+      };
+      req.onerror = (e) => rej(e);
+    });
+  }
+
+  // ---------- Monaco & Theme Definitions ----------
+  require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' }});
+  await new Promise(resolve => require(['vs/editor/editor.main'], resolve));
+  // define custom themes
+  monaco.editor.defineTheme('monokai', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: '', foreground: 'f8f8f2', background: '272822' },
+      { token: 'comment', foreground: '75715e' },
+      { token: 'keyword', foreground: 'f92672' },
+      { token: 'string', foreground: 'e6db74' },
+      { token: 'number', foreground: 'ae81ff' }
+    ],
+    colors: {
+      'editor.background': '#272822',
+      'editor.foreground': '#f8f8f2'
+    }
+  });
+  monaco.editor.defineTheme('dracula', {
+    base: 'vs-dark',
+    inherit: true,
+    rules:[{token:'', foreground:'f8f8f2', background:'282a36'}],
+    colors:{'editor.background':'#282a36'}
+  });
+  monaco.editor.defineTheme('solarized-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [],
+    colors: { 'editor.background': '#fdf6e3', 'editor.foreground': '#586e75' }
+  });
+  monaco.editor.defineTheme('solarized-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [],
+    colors: { 'editor.background': '#002b36', 'editor.foreground': '#93a1a1' }
+  });
+
+  // create editor
+  const editor = monaco.editor.create(document.getElementById('editor'), {
+    value: '// Welcome to JavaScript Playground — JStudios\n',
+    language: 'javascript',
+    theme: settings.theme,
+    fontFamily: settings.fontFamily,
+    fontSize: settings.fontSize,
+    automaticLayout: true,
+    wordWrap: settings.wordWrap ? 'on' : 'off',
+    tabSize: settings.tabSize,
+    insertSpaces: settings.useSpaces
+  });
+
+  // helper to apply settings to all open models & editor config
+  function applySettingsToEditor(s) {
+    monaco.editor.setTheme(s.theme);
+    editor.updateOptions({
+      fontFamily: s.fontFamily,
+      fontSize: s.fontSize,
+      wordWrap: s.wordWrap ? 'on' : 'off',
+      tabSize: s.tabSize,
+      insertSpaces: s.useSpaces
+    });
+    // apply to all models
+    monaco.editor.getModels().forEach(m => {
+      m.updateOptions && m.updateOptions({ tabSize: s.tabSize, insertSpaces: s.useSpaces });
+    });
+  }
+
+  applySettingsToEditor(settings);
+
+  // ---------- Editor / IDE State ----------
+  let rootDirHandle = null;
+  const tabs = []; // { id, name, fileHandle (may be null), model, isDirty }
+  let activeTabId = null;
+  const explorerRoot = document.getElementById('explorerRoot');
+  const tabsBar = document.getElementById('tabsBar');
+  const contextMenu = document.getElementById('contextMenu');
+
+  function uid() { return Math.random().toString(36).slice(2,10); }
+  function detectLanguage(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    switch(ext) {
+      case 'html': return 'html';
+      case 'css': return 'css';
+      case 'js': return 'javascript';
+      case 'ts': return 'typescript';
+      case 'json': return 'json';
+      case 'md': return 'markdown';
+      case 'py': return 'python';
+      case 'java': return 'java';
+      case 'c': return 'c';
+      case 'cpp': return 'cpp';
+      case 'cs': return 'csharp';
+      default: return 'plaintext';
+    }
+  }
+
+  // ---------- Tabs Functions ----------
+  function renderTabs() {
+    tabsBar.innerHTML = '';
+    for (const t of tabs) {
+      const el = document.createElement('div');
+      el.className = 'tab' + (t.id === activeTabId ? ' active' : '');
+      el.title = t.name;
+      const title = document.createElement('span');
+      title.textContent = t.name + (t.isDirty ? ' ●' : '');
+      el.appendChild(title);
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.innerHTML = '✕';
+      close.onclick = (e) => { e.stopPropagation(); closeTab(t.id); };
+      el.appendChild(close);
+      el.onclick = () => activateTab(t.id);
+      tabsBar.appendChild(el);
+    }
+  }
+
+  function activateTab(tabId) {
+    const tab = tabs.find(x => x.id === tabId);
+    if (!tab) return;
+    activeTabId = tabId;
+    editor.setModel(tab.model);
+    renderTabs();
+  }
+
+  function closeTab(tabId) {
+    const idx = tabs.findIndex(t => t.id === tabId);
+    if (idx === -1) return;
+    const t = tabs[idx];
+    if (t.isDirty) {
+      if (!confirm(`Tab "${t.name}" has unsaved changes. Close anyway?`)) return;
+    }
+    if (t.model) t.model.dispose();
+    tabs.splice(idx,1);
+    if (activeTabId === tabId) {
+      if (tabs.length) activateTab(tabs[tabs.length-1].id);
+      else {
+        activeTabId = null;
+        const m = monaco.editor.createModel('// Open a file or folder to start\n', 'javascript');
+        editor.setModel(m);
+      }
+    }
+    renderTabs();
+  }
+
+  async function openTabFromHandle(fileHandle) {
+    // if already open by handle equality
+    const existing = tabs.find(t => t.fileHandle === fileHandle);
+    if (existing) { activateTab(existing.id); return existing; }
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    const language = detectLanguage(file.name);
+    const model = monaco.editor.createModel(text, language, monaco.Uri.parse('inmemory://model/' + file.name + '#' + uid()));
+    const tab = { id: uid(), name: file.name, fileHandle, model, isDirty:false };
+    tabs.push(tab);
+    activateTab(tab.id);
+    // listen edits
+    tab.model.onDidChangeContent(() => { if (!tab.isDirty) { tab.isDirty = true; renderTabs(); } });
+    renderTabs();
+    return tab;
+  }
+
+  function openTabFromNameText(name, text) {
+    const language = detectLanguage(name);
+    const model = monaco.editor.createModel(text, language, monaco.Uri.parse('inmemory://model/' + name + '#' + uid()));
+    const tab = { id: uid(), name, fileHandle:null, model, isDirty:true };
+    tabs.push(tab);
+    activateTab(tab.id);
+    tab.model.onDidChangeContent(() => { if (!tab.isDirty) { tab.isDirty = true; renderTabs(); } });
+    renderTabs();
+    return tab;
+  }
+
+  // ---------- Save Logic ----------
+  async function saveTab(tab) {
+    if (!tab) return;
+    if (!tab.fileHandle) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: tab.name,
+          types: [{ description: 'Text', accept: {'text/*':['.txt','.js','.html','.css','.json','.md']} }]
+        });
+        tab.fileHandle = handle;
+        tab.name = handle.name;
+      } catch (e) {
+        console.warn('Save cancelled', e);
+        return;
+      }
+    }
+    try {
+      const writable = await tab.fileHandle.createWritable();
+      await writable.write(tab.model.getValue());
+      await writable.close();
+      tab.isDirty = false;
+      renderTabs();
+      console.log('Saved', tab.name);
+    } catch (e) {
+      alert('Save failed: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function saveActiveTab() {
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (tab) await saveTab(tab);
+  }
+
+  document.getElementById('saveAllBtn').addEventListener('click', async () => {
+    for (const t of tabs) await saveTab(t);
+    alert('Saved all files you have permission to write.');
+  });
+
+  // auto-save interval
+  setInterval(async () => {
+    if (!settings.autosave) return;
+    for (const t of tabs) {
+      if (t.isDirty) await saveTab(t);
+    }
+  }, Math.max(1000, settings.autosave * 1000));
+
+  // Ctrl/Cmd+S
+  window.addEventListener('keydown', async (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      await saveActiveTab();
+    }
+  });
+
+  // ---------- Explorer (folder tree & FS ops) ----------
+  async function renderDirectory(dirHandle, container) {
+    container.innerHTML = '';
+    const ul = document.createElement('ul'); ul.className = 'tree';
+    for await (const entry of dirHandle.values()) {
+      const li = document.createElement('li');
+      li.entryHandle = entry;
+      li.parentHandle = dirHandle;
+      const name = document.createElement('span'); name.className = 'name'; name.textContent = entry.name;
+      li.appendChild(name);
+
+      // context menu attach
+      li.addEventListener('contextmenu', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openContextMenu(ev.clientX, ev.clientY, li);
+      });
+
+      if (entry.kind === 'file') {
+        li.classList.add('file');
+        li.addEventListener('dblclick', async () => { await openTabFromHandle(entry); });
+      } else if (entry.kind === 'directory') {
+        li.classList.add('folder');
+        li.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // toggle children
+          if (li.subUl) li.subUl.style.display = li.subUl.style.display === 'none' ? 'block' : 'none';
+        });
+        li.subUl = document.createElement('ul'); li.subUl.className = 'tree';
+        li.appendChild(li.subUl);
+        await renderDirectory(entry, li.subUl);
+      }
+      ul.appendChild(li);
+    }
+    container.appendChild(ul);
+  }
+
+  document.getElementById('openFolderBtn').addEventListener('click', async () => {
+    try {
+      rootDirHandle = await window.showDirectoryPicker();
+      // store handle if settings.rememberFolder
+      if (settings.rememberFolder) {
+        try { await idbPut('rootDir', rootDirHandle); } catch(e){ console.warn('Could not persist handle', e); }
+      }
+      explorerRoot.innerHTML = '';
+      await renderDirectory(rootDirHandle, explorerRoot);
+    } catch (e) {
+      console.warn('Open folder cancelled or failed', e);
+    }
+  });
+
+  document.getElementById('openFileBtn').addEventListener('click', async () => {
+    try {
+      const [fileHandle] = await window.showOpenFilePicker();
+      await openTabFromHandle(fileHandle);
+    } catch (e) { console.warn('Open file cancelled', e); }
+  });
+
+  document.getElementById('createFileBtn').addEventListener('click', async () => {
+    const name = prompt('New file name (e.g., script.js):');
+    if (!name) return;
+    const dir = lastContextTarget && lastContextTarget.entryHandle && lastContextTarget.entryHandle.kind === 'directory'
+                ? lastContextTarget.entryHandle
+                : rootDirHandle;
+    if (!dir) { alert('Open a folder first.'); return; }
+    try {
+      const fh = await dir.getFileHandle(name, { create: true });
+      const w = await fh.createWritable(); await w.write(''); await w.close();
+      await renderDirectory(rootDirHandle, explorerRoot);
+      await openTabFromHandle(fh);
+    } catch (e) { alert('Create file failed: ' + e.message); }
+  });
+
+  // ---------- Context Menu ----------
+  let lastContextTarget = null;
+  function openContextMenu(x,y,li) {
+    lastContextTarget = li;
+    contextMenu.style.left = x + 'px'; contextMenu.style.top = y + 'px'; contextMenu.style.display = 'block';
+  }
+  document.addEventListener('click', () => { contextMenu.style.display = 'none'; lastContextTarget = null; });
+
+  contextMenu.addEventListener('click', async (ev) => {
+    ev.stopPropagation();
+    const action = ev.target.dataset.action;
+    if (!action || !lastContextTarget) return;
+    const li = lastContextTarget;
+    const entry = li.entryHandle;
+    const parent = li.parentHandle;
+    contextMenu.style.display = 'none';
+
+    try {
+      if (action === 'new-file') {
+        const name = prompt('New file name:'); if (!name) return;
+        const targetDir = (entry && entry.kind === 'directory') ? entry : parent;
+        const fh = await targetDir.getFileHandle(name, { create:true });
+        const w = await fh.createWritable(); await w.write(''); await w.close();
+        await renderDirectory(rootDirHandle, explorerRoot);
+        await openTabFromHandle(fh);
+      } else if (action === 'new-folder') {
+        const name = prompt('New folder name:'); if (!name) return;
+        const targetDir = (entry && entry.kind === 'directory') ? entry : parent;
+        await targetDir.getDirectoryHandle(name, { create:true });
+        await renderDirectory(rootDirHandle, explorerRoot);
+      } else if (action === 'rename') {
+        const newName = prompt('Rename to:', entry.name); if (!newName || newName === entry.name) return;
+        if (entry.kind === 'file') {
+          const file = await entry.getFile(); const content = await file.text();
+          const newHandle = await parent.getFileHandle(newName, { create:true });
+          const w = await newHandle.createWritable(); await w.write(content); await w.close();
+          await parent.removeEntry(entry.name);
+          await renderDirectory(rootDirHandle, explorerRoot);
+          // update any open tabs pointing to entry
+          for (const t of tabs) if (t.fileHandle === entry) { t.fileHandle = newHandle; t.name = newName; renderTabs(); }
+        } else if (entry.kind === 'directory') {
+          alert('Folder rename will create a new empty folder. To fully move contents, use OS file manager or implement copy routine.');
+          await parent.getDirectoryHandle(newName, { create:true });
+          await renderDirectory(rootDirHandle, explorerRoot);
+        }
+      } else if (action === 'delete') {
+        if (!confirm(`Delete "${entry.name}"? This will remove it from disk.`)) return;
+        await parent.removeEntry(entry.name, { recursive:true });
+        await renderDirectory(rootDirHandle, explorerRoot);
+        // close corresponding tabs
+        for (let i=tabs.length-1;i>=0;i--) {
+          if (tabs[i].fileHandle && tabs[i].fileHandle.name === entry.name) {
+            tabs[i].model.dispose(); tabs.splice(i,1);
+          }
+        }
+        renderTabs();
+      }
+    } catch (e) {
+      alert('Operation failed: ' + (e && e.message ? e.message : e));
+      console.error(e);
+    }
+  });
+
+  // ---------- Tab model change detection ----------
+  // Already done when opening tab: we attach model.onDidChangeContent handler
+
+  // ---------- Restore last folder if setting says so ----------
+  async function tryRestoreLastFolder() {
+    if (!settings.rememberFolder) return;
+    try {
+      const handle = await idbGet('rootDir');
+      if (!handle) return;
+      // check permission
+      const perm = await handle.queryPermission && await handle.queryPermission({ mode:'readwrite' });
+      if (perm === 'granted') {
+        rootDirHandle = handle;
+        explorerRoot.innerHTML = ''; await renderDirectory(rootDirHandle, explorerRoot);
+      } else {
+        // ask for permission
+        try {
+          const requested = await handle.requestPermission({ mode:'readwrite' });
+          if (requested === 'granted') { rootDirHandle = handle; explorerRoot.innerHTML=''; await renderDirectory(rootDirHandle, explorerRoot); }
+        } catch(e) { console.warn('Permission request failed', e); }
+      }
+    } catch (e) { console.warn('Restore folder failed', e); }
+  }
+  await tryRestoreLastFolder();
+
+  // ---------- Settings modal UI wiring ----------
+  const settingsBtn = document.getElementById('settingsBtn');
+  const backdrop = document.getElementById('settingsBackdrop');
+  const closeSettingsBtn = document.getElementById('closeSettings');
+  const tabButtons = Array.from(document.querySelectorAll('.modal .tabs button'));
+  const contents = Array.from(document.querySelectorAll('[data-tab-content]'));
+  function showSettings() {
+    // populate fields
+    document.getElementById('setting-fontSize').value = settings.fontSize;
+    document.getElementById('setting-fontFamily').value = settings.fontFamily;
+    document.getElementById('setting-theme').value = settings.theme;
+    document.getElementById('setting-tabSize').value = settings.tabSize;
+    document.getElementById('setting-useSpaces').checked = settings.useSpaces;
+    document.getElementById('setting-wordWrap').checked = settings.wordWrap;
+    document.getElementById('setting-autosave').value = settings.autosave;
+    document.getElementById('setting-startPage').value = settings.startPage;
+    document.getElementById('setting-rememberFolder').checked = settings.rememberFolder;
+    document.getElementById('setting-treeAnimation').checked = settings.treeAnimation;
+    document.getElementById('setting-beta').checked = settings.beta;
+    // show
+    backdrop.style.display = 'flex';
+    backdrop.setAttribute('aria-hidden','false');
+  }
+  function hideSettings() {
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden','true');
+    saveSettings(settings);
+  }
+
+  settingsBtn.onclick = showSettings;
+  closeSettingsBtn.onclick = hideSettings;
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) hideSettings(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideSettings(); });
+
+  // tabs inside modal
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => b.classList.remove('active')); btn.classList.add('active');
+      const key = btn.dataset.tab;
+      contents.forEach(c => c.style.display = c.dataset.tabContent === key ? 'block' : 'none');
+    });
+  });
+
+  // apply changes live
+  function updateSettingFromUI() {
+    settings.fontSize = parseInt(document.getElementById('setting-fontSize').value,10) || DEFAULTS.fontSize;
+    settings.fontFamily = document.getElementById('setting-fontFamily').value;
+    settings.theme = document.getElementById('setting-theme').value;
+    settings.tabSize = parseInt(document.getElementById('setting-tabSize').value,10) || DEFAULTS.tabSize;
+    settings.useSpaces = document.getElementById('setting-useSpaces').checked;
+    settings.wordWrap = document.getElementById('setting-wordWrap').checked;
+    settings.autosave = Math.max(0, parseInt(document.getElementById('setting-autosave').value,10) || DEFAULTS.autosave);
+    settings.startPage = document.getElementById('setting-startPage').value;
+    settings.rememberFolder = document.getElementById('setting-rememberFolder').checked;
+    settings.treeAnimation = document.getElementById('setting-treeAnimation').checked;
+    settings.beta = document.getElementById('setting-beta').checked;
+    // apply
+    applySettingsToEditor(settings);
+    // re-save settings to localStorage
+    saveSettings(settings);
+  }
+
+  // wire inputs
+  ['setting-fontSize','setting-fontFamily','setting-theme','setting-tabSize','setting-useSpaces','setting-wordWrap','setting-autosave','setting-startPage','setting-rememberFolder','setting-treeAnimation','setting-beta']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        updateSettingFromUI();
+        // if rememberFolder changed to false, remove saved handle
+        if (id === 'setting-rememberFolder' && !document.getElementById('setting-rememberFolder').checked) {
+          idbDelete('rootDir').catch(()=>{});
+        }
       });
     });
 
-    // 📂 Open Folder
-    document.getElementById('openFolderBtn').addEventListener('click', async () => {
-      try {
-        const dirHandle = await window.showDirectoryPicker();
-        fileHandles = [];
-        document.getElementById('fileList').innerHTML = '';
+  // reset settings
+  document.getElementById('resetSettings').addEventListener('click', () => {
+    if (!confirm('Reset all settings to defaults?')) return;
+    localStorage.removeItem('jstudios.settings');
+    idbDelete('rootDir').catch(()=>{});
+    settings = Object.assign({}, DEFAULTS);
+    saveSettings(settings);
+    applySettingsToEditor(settings);
+    hideSettings();
+    location.reload();
+  });
 
-        for await (const entry of dirHandle.values()) {
-          if (entry.kind === 'file') {
-            fileHandles.push(entry);
-            addFileToSidebar(entry.name, () => openFile(entry));
-          }
-        }
-      } catch (err) {
-        console.error('Folder open cancelled or not supported', err);
-      }
-    });
+  // theme select immediate change: ensure theme exists in Monaco
+  document.getElementById('setting-theme').addEventListener('change', () => {
+    updateSettingFromUI();
+  });
 
-    // 📄 Create File
-    document.getElementById('createFileBtn').addEventListener('click', async () => {
-      const fileName = prompt('Enter new file name (e.g., script.js):');
-      if (!fileName) return;
-
-      const blob = new Blob([''], { type: 'text/plain' });
-      const file = new File([blob], fileName, { type: 'text/plain' });
-
-      // Simulate file handle in memory (doesn't save yet)
-      const fakeHandle = {
-        name: fileName,
-        getFile: async () => file,
-        kind: 'file'
-      };
-
-      fileHandles.push(fakeHandle);
-      addFileToSidebar(fileName, () => openFile(fakeHandle));
-      editor.setValue('');
-    });
-
-    // 📃 Open Single File
-    document.getElementById('openFileBtn').addEventListener('click', async () => {
-      const [fileHandle] = await window.showOpenFilePicker();
-      const file = await fileHandle.getFile();
-      fileHandles.push(fileHandle);
-      addFileToSidebar(file.name, () => openFile(fileHandle));
-      openFile(fileHandle);
-    });
-
-    async function openFile(fileHandle) {
-      currentFileHandle = fileHandle;
-      const file = await fileHandle.getFile();
-      const content = await file.text();
-
-      const language = detectLanguage(file.name);
-      monaco.editor.setModelLanguage(editor.getModel(), language);
-      editor.setValue(content);
+  // on startup apply start page behavior
+  (async function startPageBehavior() {
+    if (settings.startPage === 'lastFolder' && settings.rememberFolder) {
+      await tryRestoreLastFolder();
+    } else if (settings.startPage === 'blank') {
+      // create blank model
+      const m = monaco.editor.createModel('', 'plaintext');
+      editor.setModel(m);
+    } else {
+      // explorer is default; nothing to do
     }
+  })();
 
-    function addFileToSidebar(name, onClick) {
-      const li = document.createElement('li');
-      li.textContent = name;
-      li.addEventListener('click', onClick);
-      document.getElementById('fileList').appendChild(li);
-    }
+  // when user opens folder and rememberFolder setting is enabled, store handle
+  // (we already store in openFolder button)
+  // but also, when user grants handle via requestPermission elsewhere, persist
+  // (no further work here)
 
-    function detectLanguage(fileName) {
-      const ext = fileName.split('.').pop().toLowerCase();
-      switch (ext) {
-        case 'html': return 'html';
-        case 'css': return 'css';
-        case 'js': return 'javascript';
-        case 'json': return 'json';
-        case 'md': return 'markdown';
-        case 'ts': return 'typescript';
-        case 'py': return 'python';
-        case 'java': return 'java';
-        case 'c': return 'c';
-        case 'cpp': return 'cpp';
-        default: return 'plaintext';
-      }
-    }
-  </script>
+  // expose some helpers for debugging
+  window.JStudios = {
+    getSettings: () => JSON.parse(localStorage.getItem('jstudios.settings') || '{}'),
+    saveSettings: () => saveSettings(settings)
+  };
+
+  // done
+})();
+</script>
 </body>
 </html>
