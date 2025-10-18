@@ -305,6 +305,76 @@ document.getElementById('publish-btn').onclick = () => {
   alert(`✅ Website exported!\n\nNow upload the downloaded file to:\n/published/\n\nShare this link:\n${location.origin}/JStudios/site?id=${siteId}`);
 };
 
+async function uploadToGitHub({ owner, repo, path, content, token, message }) {
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+  // Encode content to base64
+  const encodedContent = btoa(unescape(encodeURIComponent(content)));
+
+  const res = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json'
+    },
+    body: JSON.stringify({
+      message: message,
+      content: encodedContent
+    })
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(JSON.stringify(error, null, 2));
+  }
+
+  return await res.json();
+}
+
+function generateId(length = 6) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return id;
+}
+
+document.getElementById('publish-btn').onclick = async () => {
+  if (!currentFile) {
+    alert('Please select or create an HTML file to publish.');
+    return;
+  }
+
+  const file = files[currentFile];
+  if (!file || file.language !== 'html') {
+    alert('Please select an HTML file to publish.');
+    return;
+  }
+
+  const siteId = generateId();
+  const token = prompt('Enter your GitHub Personal Access Token:');
+  if (!token) return;
+
+  try {
+    const result = await uploadToGitHub({
+      owner: 'Toastyzz0',
+      repo: 'javascriptplaygroundlol/javascriptplaygroundlol.github.io',
+      path: `JStudios/published/${siteId}.html`,
+      content: file.content,
+      token: token,
+      message: `Publish site ${siteId}`
+    });
+
+    const siteUrl = `${location.origin}/JStudios/site?id=${siteId}`;
+    alert(`✅ Site published!\n\nLink:\n${siteUrl}`);
+    window.open(siteUrl, '_blank');
+  } catch (e) {
+    alert('❌ Failed to publish: ' + e.message);
+  }
+};
+
+
 
     document.getElementById('new-file').onclick = newFile;
     document.getElementById('del-file').onclick = deleteFile;
